@@ -1459,9 +1459,8 @@ class SaveImage:
                     }
                     bindata = json.dumps(postData).encode("utf-8")
                     req = urllib.request.Request(espm.apiURL, bindata, { "Content-Type": "application/json" })
-                    resp = urllib.request.urlopen(req)
-                    resp.read()
-                    resp.close()
+                    with urllib.request.urlopen(req) as resp:
+                        resp.read()
                 except Exception as ex:
                     print("Error saving images: " + str(ex))
             else:
