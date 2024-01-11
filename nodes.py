@@ -34,6 +34,12 @@ import importlib
 import folder_paths
 import latent_preview
 
+# @@@ ESPM
+import base64
+# Using urllib instead of aiohttp, because it needs to be synchronous
+import urllib
+import espm
+
 def before_node_execution():
     comfy.model_management.throw_exception_if_processing_interrupted()
 
@@ -1426,8 +1432,43 @@ class SaveImage:
                     for x in extra_pnginfo:
                         metadata.add_text(x, json.dumps(extra_pnginfo[x]))
 
-            file = f"{filename}_{counter:05}_.png"
-            img.save(os.path.join(full_output_folder, file), pnginfo=metadata, compress_level=self.compress_level)
+            # @@@ ESPM
+            if extra_pnginfo is not None and "workflow" in extra_pnginfo and "extra" in extra_pnginfo["workflow"] and "idimagem" in extra_pnginfo["workflow"]["extra"]:
+                file = str(extra_pnginfo["workflow"]["extra"]["idimagem"])
+                espmPathI = os.path.join(full_output_folder, file + ".jpg")
+                file = file + ".png"
+                espmPathP = os.path.join(full_output_folder, file)
+                try:
+                    img.save(espmPathP, pnginfo=metadata, compress_level=self.compress_level)
+                    img = img.resize((128, int(img.height * 128 / img.width)))
+                    img.save(espmPathI)
+                    base64I = None
+                    base64P = None
+                    with open(espmPathI, "rb") as fileI:
+                        base64I = base64.b64encode(fileI.read()).decode()
+                    with open(espmPathP, "rb") as fileP:
+                        base64P = base64.b64encode(fileP.read()).decode()
+                    os.remove(espmPathI)
+                    os.remove(espmPathP)
+                    postData = {
+                        "chaveImagem": espm.chaveImagem,
+                        "idimagem": extra_pnginfo["workflow"]["extra"]["idimagem"],
+                        "idusuario": extra_pnginfo["workflow"]["extra"]["idusuario"],
+                        "base64I": base64I,
+                        "base64P": base64P
+                    }
+                    bindata = json.dumps(postData).encode("utf-8")
+                    req = urllib.request.Request(espm.apiURL, bindata, { "Content-Type": "application/json" })
+                    resp = urllib.request.urlopen(req)
+                    resp.read()
+                    resp.close()
+                except Exception as ex:
+                    print("Error saving images: " + str(ex))
+            else:
+                file = f"{filename}_{counter:05}_.png"
+
+                img.save(os.path.join(full_output_folder, file), pnginfo=metadata, compress_level=self.compress_level)
+
             results.append({
                 "filename": file,
                 "subfolder": subfolder,
