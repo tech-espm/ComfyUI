@@ -35,10 +35,32 @@ import folder_paths
 import latent_preview
 
 # @@@ ESPM
+# pip install nudenet must be executed in the venv used by the platform
+from nudenet import NudeDetector
 import base64
 # Using urllib instead of aiohttp, because it needs to be synchronous
 import urllib
 import espm
+censored_classes = [
+    "FEMALE_GENITALIA_COVERED",
+    #"FACE_FEMALE",
+    "BUTTOCKS_EXPOSED",
+    "FEMALE_BREAST_EXPOSED",
+    "FEMALE_GENITALIA_EXPOSED",
+    #"MALE_BREAST_EXPOSED",
+    "ANUS_EXPOSED",
+    #"FEET_EXPOSED",
+    #"BELLY_COVERED",
+    #"FEET_COVERED",
+    #"ARMPITS_COVERED",
+    #"ARMPITS_EXPOSED",
+    #"FACE_MALE",
+    #"BELLY_EXPOSED",
+    "MALE_GENITALIA_EXPOSED",
+    #"ANUS_COVERED",
+    #"FEMALE_BREAST_COVERED",
+    #"BUTTOCKS_COVERED",
+]
 
 def before_node_execution():
     comfy.model_management.throw_exception_if_processing_interrupted()
@@ -1439,6 +1461,10 @@ class SaveImage:
                 file = file + ".png"
                 espmPathP = os.path.join(full_output_folder, file)
                 try:
+                    img.save(espmPathP, pnginfo=metadata, compress_level=self.compress_level)
+                    nude_detector = NudeDetector()
+                    nude_detector.censor(espmPathP, censored_classes, espmPathP)
+                    img = Image.open(espmPathP)
                     img.save(espmPathP, pnginfo=metadata, compress_level=self.compress_level)
                     img = img.resize((128, int(img.height * 128 / img.width)))
                     img.save(espmPathI)
