@@ -12,6 +12,7 @@ extra_model_paths.yaml
 .idea/
 venv/
 /web/extensions/*
+/web/index.html
 !/web/extensions/logging.js.example
 !/web/extensions/core/
 /tests-ui/data/object_info.json
