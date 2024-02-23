@@ -15,6 +15,9 @@ from PIL import Image, ImageOps
 from PIL.PngImagePlugin import PngInfo
 from io import BytesIO
 
+# @@@ ESPM
+import espm
+
 try:
     import aiohttp
     from aiohttp import web
@@ -480,10 +483,16 @@ class PromptServer():
                     extra_data["client_id"] = json_data["client_id"]
                 if valid[0]:
                     # @@@ ESPM
-                    if "idimagem" in extra_data:
-                        prompt_id = str(extra_data["idimagem"])
+                    if espm.force:
+                        if "idimagem" in extra_data:
+                            prompt_id = str(extra_data["idimagem"])
+                        else:
+                            return web.json_response({"error": "forbidden", "node_errors": []}, status=400)
                     else:
-                        prompt_id = str(uuid.uuid4())
+                        if "idimagem" in extra_data:
+                            prompt_id = str(extra_data["idimagem"])
+                        else:
+                            prompt_id = str(uuid.uuid4())
 
                     outputs_to_execute = valid[2]
                     self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
