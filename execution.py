@@ -358,6 +358,13 @@ class PromptExecutor:
                 d = self.object_storage.pop(o)
                 del d
 
+			# @@@ ESPM
+			# Remove the outputs for all SaveImage nodes, forcing them to be executed again
+            for x in prompt:
+                node = prompt[x]
+                if node['class_type'] == 'SaveImage':
+                    self.outputs.pop(x, None)
+
             for x in prompt:
                 recursive_output_delete_if_changed(prompt, self.old_prompt, self.outputs, x)
 
